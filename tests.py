@@ -61,7 +61,8 @@ class TestPublish(unittest.TestCase):
         self.run_command("git config user.name 'gerrit publish'")
         self.run_command("git config user.email 'gerrit@publish.com'")
         self.run_command("git commit --allow-empty -m 'Initial commit'")
-        self.assertEqual(repo_dir, self.run_command("git rev-parse --show-toplevel"))
+        toplevel = self.run_command("git rev-parse --show-toplevel")[0]
+        self.assertEqual(repo_dir, toplevel)
         return repo_dir
 
     def run_publish(self, args, should_crash=False):
@@ -70,8 +71,6 @@ class TestPublish(unittest.TestCase):
         sys.stdout = StringIO()
         sys.stderr = sys.stdout
 
-
-        sys.stdout.seek(0)
         splitted = shlex.split(args)
         sys.argv = ["gerrit_publish"] + splitted
         if should_crash:
@@ -87,8 +86,7 @@ class TestPublish(unittest.TestCase):
         return ret
 
     def run_command(self, command):
-        with open(os.devnull, 'w') as shutup:
-            return subprocess.check_output(shlex.split(command)).strip()
+        return subprocess.check_output(shlex.split(command)).splitlines()
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
