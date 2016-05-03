@@ -1,0 +1,4 @@
+#!/bin/sh
+
+python gerrit_publish.py $@
+
