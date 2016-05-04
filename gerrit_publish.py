@@ -14,11 +14,11 @@ def main():
     upstream = "HEAD^"
     starting_commit = c("git rev-parse HEAD")[0]
     c("git reset --soft {}", upstream)
-    c("git commit --allow-empty -m 'Squash commit'")
+    c("git commit --allow-empty -m 'test commit'")
     squash_commit = c("git rev-parse HEAD")[0]
     c("git reset --soft {}", starting_commit)
     c("git update-ref MERGE_HEAD {}", squash_commit)
-    c("git commit --allow-empty -m 'back-merge'")
+    c("git commit -m 'back-merge'")
 
 if __name__ == '__main__':
     main()

@@ -8,12 +8,9 @@ import sys
 import tempfile
 import unittest
 
-rootlogger = logging.getLogger()
-rootlogger.setLevel(logging.DEBUG)
-
-
 class TestPublish(unittest.TestCase):
     def setUp(self):
+        self.debug = False
         self.oldargv = sys.argv
         self.oldcwd = os.getcwd()
 
@@ -21,14 +18,19 @@ class TestPublish(unittest.TestCase):
         sys.argv = self.oldargv
         os.chdir(self.oldcwd)
 
+    def test_commit_without_editor(self):
+        self.given_test_repo()
+        self.run_command("git commit --allow-empty")
+
     def test_simple_publish(self):
         self.given_test_repo()
         self.make_commit()
-        my_commit = self.run_command("git rev-parse HEAD")[0]
+        self.make_commit()
+        my_commit = self.rev_parse("HEAD")
         out = self.run_publish("origin/master")
-        first_parent = self.run_command("git rev-parse HEAD^")[0]
-        back_merge = self.run_command("git rev-parse HEAD")[0]
-        second_parent = self.run_command("git rev-parse HEAD^2")[0]
+        first_parent = self.rev_parse("HEAD^")
+        back_merge = self.rev_parse("HEAD")
+        second_parent = self.rev_parse("HEAD^2")
         self.assertNotEqual(my_commit, back_merge)
         self.assertNotEqual(first_parent, second_parent)
         self.assertEqual(my_commit, first_parent)
@@ -61,7 +63,7 @@ class TestPublish(unittest.TestCase):
         self.run_command("git config user.name 'gerrit publish'")
         self.run_command("git config user.email 'gerrit@publish.com'")
         self.run_command("git commit --allow-empty -m 'Initial commit'")
-        toplevel = self.run_command("git rev-parse --show-toplevel")[0]
+        toplevel = self.rev_parse("--show-toplevel")
         self.assertEqual(repo_dir, toplevel)
         return repo_dir
 
@@ -72,6 +74,9 @@ class TestPublish(unittest.TestCase):
         sys.stderr = sys.stdout
 
         splitted = shlex.split(args)
+        if self.debug:
+            splitted = ["-vvv"] + splitted
+
         sys.argv = ["gerrit_publish"] + splitted
         if should_crash:
             with self.assertRaises(SystemExit):
@@ -83,10 +88,16 @@ class TestPublish(unittest.TestCase):
         sys.stdout = oldstdout
         sys.stderr = oldstderr
 
+        if self.debug:
+            print ret
+
         return ret
 
     def run_command(self, command):
         return subprocess.check_output(shlex.split(command)).splitlines()
+
+    def rev_parse(self, rev):
+        return self.run_command("git rev-parse {}".format(rev))[0]
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
