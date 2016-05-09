@@ -15,13 +15,15 @@ class TestPublish(unittest.TestCase):
         self.oldcwd = os.getcwd()
 
     def tearDown(self):
+        print os.getcwd()
         sys.argv = self.oldargv
         os.chdir(self.oldcwd)
 
     def test_commit_without_editor(self):
         self.given_test_repo()
+        self.prepare_commit()
         self.run_command("git commit --allow-empty")
-
+        
     def test_simple_publish(self):
         self.given_test_repo()
         self.make_commit()
@@ -52,6 +54,11 @@ class TestPublish(unittest.TestCase):
 
     def make_commit(self):
         self.run_command("git commit --allow-empty -m test")
+
+    def prepare_commit(self):
+        os.environ["EDITOR"] = "mv .git/COMMIT_EDITMSG2 "
+        with open(".git/COMMIT_EDITMSG2", "w") as text_file:
+                text_file.write("This is my commit")
 
     def given_test_repo(self):
         test_data = "{}/test_data".format(os.getcwd())
