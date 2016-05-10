@@ -8,22 +8,32 @@ import sys
 import tempfile
 import unittest
 
+## TODO:
+## Publish with unstaged
+
 class TestPublish(unittest.TestCase):
     def setUp(self):
         self.debug = False
         self.oldargv = sys.argv
         self.oldcwd = os.getcwd()
+        self.prompt_answers = []
 
     def tearDown(self):
         print os.getcwd()
         sys.argv = self.oldargv
         os.chdir(self.oldcwd)
+        self.assertEqual([], self.prompt_answers)
+
+    def test_prompt_user(self):
+        self.prompt_answers.insert(0,"n")
+        self.assertEqual("n", prompt_user(["y", "n"], self.prompt_answers))
 
     def test_commit_without_editor(self):
         self.given_test_repo()
-        self.prepare_commit()
+        self.prepare_commit("My commit msg")
         self.run_command("git commit --allow-empty")
-        
+        self.assertEqual("My commit msg", self.commit_msg("HEAD"))
+
     def test_simple_publish(self):
         self.given_test_repo()
         self.make_commit()
@@ -43,7 +53,7 @@ class TestPublish(unittest.TestCase):
         self.assertTrue(out.startswith("usage: "), out)
 
     def test_not_in_repo(self):
-        os.chdir("/tmp")
+        os.chdir("/")
         out = self.run_publish("lsv", True)
         self.assertIn("Not inside repo", out, "No warning about outside repo:\n{}".format(out))
 
@@ -55,10 +65,10 @@ class TestPublish(unittest.TestCase):
     def make_commit(self):
         self.run_command("git commit --allow-empty -m test")
 
-    def prepare_commit(self):
+    def prepare_commit(self, message):
         os.environ["EDITOR"] = "mv .git/COMMIT_EDITMSG2 "
         with open(".git/COMMIT_EDITMSG2", "w") as text_file:
-                text_file.write("This is my commit")
+                text_file.write(message)
 
     def given_test_repo(self):
         test_data = "{}/test_data".format(os.getcwd())
@@ -87,9 +97,9 @@ class TestPublish(unittest.TestCase):
         sys.argv = ["gerrit_publish"] + splitted
         if should_crash:
             with self.assertRaises(SystemExit):
-                main()
+                main(prompt_answers=self.prompt_answers)
         else:
-            main()
+            main(prompt_answers=self.prompt_answers)
 
         ret = sys.stdout.getvalue().strip()
         sys.stdout = oldstdout
@@ -102,6 +112,9 @@ class TestPublish(unittest.TestCase):
 
     def run_command(self, command):
         return subprocess.check_output(shlex.split(command)).splitlines()
+
+    def commit_msg(self, commit):
+        return "\n".join(self.run_command("git log --format=%B -n 1 {}".format(commit))).strip()
 
     def rev_parse(self, rev):
         return self.run_command("git rev-parse {}".format(rev))[0]

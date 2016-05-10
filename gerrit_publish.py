@@ -8,7 +8,7 @@ def verify_inside_repo():
         p("Not inside repo")
         sys.exit(1)
 
-def main():
+def main(prompt_answers=[]):
     a = init()
     verify_inside_repo()
     upstream = "HEAD^"
@@ -19,6 +19,11 @@ def main():
     c("git reset --soft {}", starting_commit)
     c("git update-ref MERGE_HEAD {}", squash_commit)
     c("git commit -m 'back-merge'")
+
+def prompt_user(options, prompt_answers):
+    if len(prompt_answers) > 0:
+        assert prompt_answers[0] in options, "Bad prompt answer"
+        return prompt_answers.pop()
 
 if __name__ == '__main__':
     main()
