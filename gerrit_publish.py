@@ -8,17 +8,27 @@ def verify_inside_repo():
         p("Not inside repo")
         sys.exit(1)
 
+def verify_staged_changes():
+    cached = c("git diff --cached --name-only")
+    if len(cached) > 0:
+        p("Warning: You have staged changes")
+
 def main(prompt_answers=[]):
     a = init()
     verify_inside_repo()
+    verify_staged_changes()
     upstream = "HEAD^"
     starting_commit = c("git rev-parse HEAD")[0]
-    c("git reset --soft {}", upstream)
-    c("git commit --allow-empty -m 'test commit'")
-    squash_commit = c("git rev-parse HEAD")[0]
-    c("git reset --soft {}", starting_commit)
-    c("git update-ref MERGE_HEAD {}", squash_commit)
-    c("git commit -m 'back-merge'")
+    try:
+        c("git reset --soft {}", upstream)
+        c("git commit -m 'test publish'")
+        squash_commit = c("git rev-parse HEAD")[0]
+        c("git reset --soft {}", starting_commit)
+        c("git update-ref MERGE_HEAD {}", squash_commit)
+        c("git commit -m 'back-merge'")
+    except Exception:
+        c("git reset --soft {}", starting_commit)
+        raise
 
 def prompt_user(options, prompt_answers):
     if len(prompt_answers) > 0:
