@@ -13,7 +13,7 @@ import unittest
 
 class TestPublish(unittest.TestCase):
     def setUp(self):
-        self.debug = True
+        self.debug = False
         self.oldargv = sys.argv
         self.oldcwd = os.getcwd()
         self.prompt_answers = []
@@ -52,7 +52,7 @@ class TestPublish(unittest.TestCase):
 
     def test_prompt_user(self):
         self.prompt_answers.insert(0,"n")
-        self.assertEqual("n", prompt_user(["y", "n"], self.prompt_answers))
+        self.assertEqual("n", prompt_user("Do you agree?", ["y", "n"], self.prompt_answers))
 
     def test_commit_without_editor(self):
         self.given_test_repo()
@@ -64,10 +64,12 @@ class TestPublish(unittest.TestCase):
         self.given_test_repo()
         self.make_commit("test_file", "Hello world", "Test commit")
         my_commit = self.rev_parse("HEAD")
+        self.prompt_answers.insert(0,"y")
         out = self.run_publish("origin/master")
         first_parent = self.rev_parse("HEAD^")
         back_merge = self.rev_parse("HEAD")
         second_parent = self.rev_parse("HEAD^2")
+        self.assertIn("Do you want to continue?", out, "No confirmation prompt: {}".format(out))
         self.assertNotEqual(my_commit, back_merge)
         self.assertNotEqual(first_parent, second_parent)
         self.assertEqual(my_commit, first_parent)

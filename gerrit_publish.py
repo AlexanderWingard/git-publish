@@ -26,11 +26,13 @@ def main(prompt_answers=[]):
         c("git reset --soft {}", starting_commit)
         c("git update-ref MERGE_HEAD {}", squash_commit)
         c("git commit -m 'back-merge'")
+        prompt_user("Do you want to continue?", ["y", "n"], prompt_answers)
     except Exception:
         c("git reset --soft {}", starting_commit)
         raise
 
-def prompt_user(options, prompt_answers):
+def prompt_user(prompt, options, prompt_answers):
+    print prompt
     if len(prompt_answers) > 0:
         assert prompt_answers[0] in options, "Bad prompt answer"
         return prompt_answers.pop()
